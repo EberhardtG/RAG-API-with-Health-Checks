@@ -25,9 +25,12 @@ It includes:
 
 ```
 my_rag.py          # RAG pipeline (ingest, retrieve, prompt, generate)
-my_rag_api.py      # FastAPI backend
+main.py            # FastAPI backend
 docs/              # Folder containing .txt/.md documents
 rag_db/            # Persistent ChromaDB storage
+Dockerfile         # Container build instructions
+.dockerignore      # Files excluded from Docker build context
+requirements.txt   # Python dependencies
 ```
 
 ---
@@ -41,12 +44,52 @@ The API uses:
 - **llama3.2:1b** as the default model  
 - **rag_db/** as the persistent database directory  
 
-You can adjust these in the config section:
+You can adjust these in the config section of `main.py`:
 
 ```python
-OLLAMA_URL = "http://localhost:11434"
+OLLAMA_URL = "http://host.docker.internal:11434"
 MODEL = "llama3.2:1b"
 DB_PATH = "./rag_db"
+```
+
+---
+
+## 🐳 Docker Setup
+
+### **Dockerfile**
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir numpy==1.26.4
+
+COPY main.py .
+COPY my_rag.py .
+COPY docs/ docs/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+### **.dockerignore**
+
+```
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+rag_db/
 ```
 
 ---
@@ -156,10 +199,10 @@ Start Ollama:
 ollama serve
 ```
 
-Run the API:
+Run the API locally:
 
 ```
-uvicorn my_rag_api:app --reload
+uvicorn main:app --reload
 ```
 
 Open Swagger UI:
@@ -176,7 +219,29 @@ Test:
 
 ---
 
+## 🐳 Running with Docker
+
+Build the container:
+
+```
+docker build --no-cache -t rag-api .
+```
+
+Run it:
+
+```
+docker run -p 8000:8000 rag-api
+```
+
+Swagger UI:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
 ## 🎯 Purpose
 
 This API is the backend foundation for your module project. Completing it now ensures Week 2 focuses on Dockerization and deployment rather than debugging.
-.
+
