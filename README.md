@@ -1,26 +1,40 @@
-# 🧠 RAG API with Health Checks (Configurable + Docker Compose Edition)
 
-A multi‑service Retrieval‑Augmented Generation (RAG) backend using **FastAPI**, **ChromaDB**, and **Ollama**, now fully refactored to use **environment‑driven configuration** via a centralized `Settings` class and `.env` management. The stack runs under **Docker Compose** with persistent volumes and service‑to‑service networking.
+# 🧠 Full‑Stack RAG System (FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose)
+
+A complete Retrieval‑Augmented Generation (RAG) system built with:
+
+- **FastAPI** (backend API)  
+- **ChromaDB** (vector store)  
+- **Ollama** (local LLM inference)  
+- **Sentence‑Transformers** (embeddings)  
+- **Streamlit** (frontend UI)  
+- **Docker Compose** (multi‑service orchestration)  
+
+The system is fully configurable via `.env`, uses persistent storage, and provides guardrailed, grounded answers with confidence scoring.
 
 ---
 
-## 🚀 Overview
+## 🚀 Features
 
-This backend exposes a guardrailed RAG pipeline with:
+### 🔧 Backend (FastAPI)
+- **POST /ask** — Ask a question, get grounded RAG answers  
+- **POST /ingest** — Embed documents from `docs/`  
+- **GET /stats** — Document count + model info  
+- **GET /debug-retrieve** — Raw ChromaDB retrieval (for debugging)  
+- **GET /health** — ChromaDB + Ollama + model status  
 
-- **POST /ask** — Ask a question and receive grounded answers  
-- **POST /ingest** — Embed documents from `docs/` into ChromaDB  
-- **GET /stats** — View document count and model info  
-- **GET /health** — Check ChromaDB + Ollama connectivity  
+### 🎨 Frontend (Streamlit)
+- Chat‑style interface for asking questions  
+- Buttons for ingestion, stats, and health checks  
+- Displays retrieved chunks, sources, and confidence  
+- Clean UI for interacting with the backend  
 
-New improvements:
-
+### 🧱 Infrastructure
 - Centralized configuration via `config.py`  
 - `.env` file for environment variables  
-- Docker Compose `env_file: .env` integration  
-- Pydantic v2 + pydantic‑settings  
-- Persistent ChromaDB volume (`/app/chroma_data`)  
-- No hardcoded paths or model names  
+- Docker Compose with persistent volumes  
+- Single ChromaDB client + embedding function  
+- Clean `/ask` endpoint using `rag_query()`  
 
 ---
 
@@ -28,31 +42,32 @@ New improvements:
 
 ```
 rag-docker-demo/
-├── docker-compose.yml        # Multi-service orchestration
-├── .env                      # Environment variables (used by Docker Compose)
-├── .env.example              # Safe example for documentation
-├── .dockerignore             # Ignore unnecessary files during build
+├── docker-compose.yml
+├── .env
+├── .env.example
+├── .dockerignore
 ├── backend/
-│   ├── Dockerfile            # Backend container build instructions
-│   ├── main.py               # FastAPI backend
+│   ├── Dockerfile
+│   ├── main.py               # Cleaned + simplified /ask endpoint
 │   ├── my_rag.py             # RAG pipeline (ingest, retrieve, generate)
-│   ├── config.py             # Centralized Settings class (Pydantic v2)
-│   ├── requirements.txt      # Python dependencies
-│   └── docs/                 # Folder containing .txt/.md documents
+│   ├── config.py             # Centralized Settings class
+│   ├── requirements.txt
+│   └── docs/
 │       └── sample.txt
-└── chroma_data/              # Persistent ChromaDB storage (created automatically)
+├── frontend/
+│   ├── streamlit_app.py      # Streamlit UI
+│   ├── requirements.txt
+│   └── assets/
+└── chroma_data/              # Persistent ChromaDB storage
 ```
 
 ---
 
-## ⚙️ Configuration (NEW)
+## ⚙️ Configuration (Pydantic Settings)
 
-All configuration is now centralized in `backend/config.py` using **pydantic‑settings**:
+All configuration lives in `backend/config.py`:
 
 ```python
-from pydantic_settings import BaseSettings
-from pydantic import Field
-
 class Settings(BaseSettings):
     OLLAMA_URL: str = Field("http://localhost:11434", env="OLLAMA_URL")
     MODEL_NAME: str = Field("llama3.2:1b", env="MODEL_NAME")
@@ -63,12 +78,9 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_file_encoding = "utf-8"
-
-settings = Settings()
 ```
 
-### `.env` (used by Docker Compose)
+### `.env`
 
 ```
 OLLAMA_URL=http://ollama:11434
@@ -77,47 +89,11 @@ CHROMA_PATH=/app/chroma_data
 MAX_RESULTS=3
 CONFIDENCE_THRESHOLD=1.0
 DEBUG=false
-```
-
-### `.env.example` (safe for documentation)
-
-```
-OLLAMA_URL=http://ollama:11434
-MODEL_NAME=llama3.2:1b
-CHROMA_PATH=/app/chroma_data
-MAX_RESULTS=3
-CONFIDENCE_THRESHOLD=1.0
-DEBUG=false
-```
-
-### Updated `main.py`
-
-All hardcoded values were removed:
-
-```python
-from config import settings
-
-OLLAMA_URL = settings.OLLAMA_URL
-MODEL = settings.MODEL_NAME
-DB_PATH = settings.CHROMA_PATH
-```
-
-### Updated `my_rag.py`
-
-Your RAG pipeline now uses:
-
-```python
-settings.MAX_RESULTS
-settings.CONFIDENCE_THRESHOLD
 ```
 
 ---
 
-## 🐳 Docker Setup (UPDATED)
-
-### docker-compose.yml
-
-Now uses `env_file: .env`:
+## 🐳 Docker Compose (Backend + Frontend + Ollama)
 
 ```yaml
 services:
@@ -132,6 +108,14 @@ services:
     volumes:
       - chroma_data:/app/chroma_data
 
+  frontend:
+    build: ./frontend
+    container_name: rag_frontend
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+
   ollama:
     image: ollama/ollama
     container_name: rag_ollama
@@ -145,45 +129,65 @@ volumes:
   ollama_data:
 ```
 
-### Backend Dockerfile (UPDATED)
+---
 
-Includes `config.py` and updated requirements:
+## 🧩 Streamlit Frontend
 
-```dockerfile
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+### Example `streamlit_app.py`
 
-COPY main.py .
-COPY my_rag.py .
-COPY config.py .
-COPY docs/ docs/
-```
+```python
+import streamlit as st
+import requests
 
-### requirements.txt (UPDATED)
+BACKEND_URL = "http://localhost:8000"
 
-```
-fastapi==0.109.0
-uvicorn==0.27.0
-chromadb==0.4.24
-sentence-transformers==2.3.1
-requests==2.31.0
-pydantic>=2.7.0
-pydantic-settings==2.6.1
-numpy==1.26.4
+st.title("RAG Demo")
+
+question = st.text_input("Ask a question:")
+
+if st.button("Ask"):
+    response = requests.post(
+        f"{BACKEND_URL}/ask",
+        json={"question": question}
+    ).json()
+
+    st.write("### Answer")
+    st.write(response["answer"])
+
+    st.write("### Confidence")
+    st.write(response["confidence"])
+
+    st.write("### Retrieved Chunks")
+    for chunk in response["chunks_retrieved"]:
+        st.write(f"**{chunk['source']}** (distance: {chunk['distance']:.2f})")
+        st.write(chunk["text"])
+        st.write("---")
+
+if st.button("Re-index Documents"):
+    st.write(requests.post(f"{BACKEND_URL}/ingest").json())
+
+if st.button("Stats"):
+    st.write(requests.get(f"{BACKEND_URL}/stats").json())
+
+if st.button("Health Check"):
+    st.write(requests.get(f"{BACKEND_URL}/health").json())
 ```
 
 ---
 
-## 🔌 Endpoints
+## 🔌 Backend Endpoints (Final)
 
 ### **POST /ask**
-Grounded answer with confidence scoring.
+Uses `rag_query()` internally. Clean, grounded, and stable.
 
 ### **POST /ingest**
 Embeds documents from `docs/`.
 
 ### **GET /stats**
 Shows document count + model name.
+
+### **GET /debug-retrieve**
+Raw ChromaDB query results — used to confirm retrieval works.
 
 ### **GET /health**
 Verifies:
@@ -194,13 +198,13 @@ Verifies:
 
 ---
 
-## 🛡️ Guardrails Included
+## 🛡️ Guardrails
 
-- Distance threshold filtering  
+- Strict grounding  
 - Confidence scoring  
-- Strict grounding rules  
 - “I don’t know” fallback  
 - No hallucinated citations  
+- Clean retrieval pipeline  
 
 ---
 
@@ -214,48 +218,37 @@ http://localhost:8000/docs
 
 ---
 
-## 🐳 Running with Docker Compose
+## 🐳 Running the Full Stack
 
-### Build + start:
+### Start everything:
 
 ```
 docker compose up --build
 ```
 
-### Stop:
+### Backend:
 
 ```
-docker compose down
+http://localhost:8000/docs
 ```
 
-### Restart (persistent data):
+### Frontend:
 
 ```
-docker compose up
-```
-
-### Verify:
-
-```
-http://localhost:8000/health
-```
-
-You should see:
-
-```
-"ollama": "connected"
+http://localhost:8501
 ```
 
 ---
 
 ## 🎯 Purpose
 
-This backend is now:
+This system is now:
 
 - Fully configurable  
 - Docker‑ready  
-- Production‑aligned  
-- Persistent  
+- Retrieval‑verified  
+- Frontend‑integrated  
 - Guardrailed  
-- Ready for the **Streamlit frontend**   
+- Production‑aligned  
+- Ready for deployment or grading  
 
