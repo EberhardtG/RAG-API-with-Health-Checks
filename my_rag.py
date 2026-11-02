@@ -3,11 +3,15 @@ import requests
 import json
 import os
 import time
+from config import settings
 
-OLLAMA_URL = "http://localhost:11434"
-MODEL = "llama3.2:1b"  # Adjust based on your downloaded model
-client = chromadb.PersistentClient(path="rag_db")
-collection = client.get_or_create_collection("my_rag_collection")
+OLLAMA_URL = settings.OLLAMA_URL
+MODEL = settings.MODEL_NAME
+  # Adjust based on your downloaded model
+
+
+
+
 
 
 # --- Step 1: Ingestion ---
@@ -29,7 +33,7 @@ def load_documents(directory):
                 })
     return docs
 
-def ingest(collection, docs_directory):
+def ingest(collection, docs_directory="/app/docs"):
     """Load, chunk, and store documents in ChromaDB."""
     chunks = load_documents(docs_directory)
     if not chunks:
@@ -187,5 +191,4 @@ def rag_query(collection, question, n_results=3, stream=True, dt_threshold=1.0):
         "confidence": confidence,
         "chunks_retrieved": chunks
     }
-
 
