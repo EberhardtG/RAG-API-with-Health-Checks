@@ -1,23 +1,26 @@
-# 🧠 RAG API with Health Checks (Docker Compose Edition)  
-A multi‑service Retrieval‑Augmented Generation (RAG) stack using **FastAPI**, **ChromaDB**, and **Ollama**, orchestrated with **Docker Compose**. This backend supports ingestion, querying, system health checks, and persistent vector storage.
+# 🧠 RAG API with Health Checks (Configurable + Docker Compose Edition)
+
+A multi‑service Retrieval‑Augmented Generation (RAG) backend using **FastAPI**, **ChromaDB**, and **Ollama**, now fully refactored to use **environment‑driven configuration** via a centralized `Settings` class and `.env` management. The stack runs under **Docker Compose** with persistent volumes and service‑to‑service networking.
 
 ---
 
 ## 🚀 Overview
 
-This stack runs two connected services:
+This backend exposes a guardrailed RAG pipeline with:
 
-### **1. FastAPI Backend (your RAG API)**
-- Ingest documents  
-- Query ChromaDB  
-- Stream or return grounded answers  
-- Provide health checks and stats  
-- Communicate with Ollama via internal Docker networking  
+- **POST /ask** — Ask a question and receive grounded answers  
+- **POST /ingest** — Embed documents from `docs/` into ChromaDB  
+- **GET /stats** — View document count and model info  
+- **GET /health** — Check ChromaDB + Ollama connectivity  
 
-### **2. Ollama Service**
-- Hosts your LLM (e.g., `llama3.2:1b`)  
-- Provides `/api/chat` and `/api/tags` endpoints  
-- Stores models persistently in a named volume  
+New improvements:
+
+- Centralized configuration via `config.py`  
+- `.env` file for environment variables  
+- Docker Compose `env_file: .env` integration  
+- Pydantic v2 + pydantic‑settings  
+- Persistent ChromaDB volume (`/app/chroma_data`)  
+- No hardcoded paths or model names  
 
 ---
 
@@ -26,11 +29,14 @@ This stack runs two connected services:
 ```
 rag-docker-demo/
 ├── docker-compose.yml        # Multi-service orchestration
+├── .env                      # Environment variables (used by Docker Compose)
+├── .env.example              # Safe example for documentation
 ├── .dockerignore             # Ignore unnecessary files during build
 ├── backend/
 │   ├── Dockerfile            # Backend container build instructions
 │   ├── main.py               # FastAPI backend
-│   ├── my_rag.py             # RAG pipeline (ingest, retrieve, prompt, generate)
+│   ├── my_rag.py             # RAG pipeline (ingest, retrieve, generate)
+│   ├── config.py             # Centralized Settings class (Pydantic v2)
 │   ├── requirements.txt      # Python dependencies
 │   └── docs/                 # Folder containing .txt/.md documents
 │       └── sample.txt
@@ -39,44 +45,88 @@ rag-docker-demo/
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Configuration (NEW)
 
-The backend reads configuration from environment variables set in `docker-compose.yml`:
-
-```yaml
-environment:
-  - OLLAMA_URL=http://ollama:11434
-  - MODEL_NAME=llama3.2:1b
-```
-
-Inside `main.py`, these are accessed via:
+All configuration is now centralized in `backend/config.py` using **pydantic‑settings**:
 
 ```python
-OLLAMA_URL = os.environ.get("OLLAMA_URL")
-MODEL = os.environ.get("MODEL_NAME")
-DB_PATH = "/app/chroma_data"   # Matches docker-compose volume
+from pydantic_settings import BaseSettings
+from pydantic import Field
+
+class Settings(BaseSettings):
+    OLLAMA_URL: str = Field("http://localhost:11434", env="OLLAMA_URL")
+    MODEL_NAME: str = Field("llama3.2:1b", env="MODEL_NAME")
+    CHROMA_PATH: str = Field("/app/chroma_data", env="CHROMA_PATH")
+    MAX_RESULTS: int = Field(3, env="MAX_RESULTS")
+    CONFIDENCE_THRESHOLD: float = Field(1.0, env="CONFIDENCE_THRESHOLD")
+    DEBUG: bool = Field(False, env="DEBUG")
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+settings = Settings()
+```
+
+### `.env` (used by Docker Compose)
+
+```
+OLLAMA_URL=http://ollama:11434
+MODEL_NAME=llama3.2:1b
+CHROMA_PATH=/app/chroma_data
+MAX_RESULTS=3
+CONFIDENCE_THRESHOLD=1.0
+DEBUG=false
+```
+
+### `.env.example` (safe for documentation)
+
+```
+OLLAMA_URL=http://ollama:11434
+MODEL_NAME=llama3.2:1b
+CHROMA_PATH=/app/chroma_data
+MAX_RESULTS=3
+CONFIDENCE_THRESHOLD=1.0
+DEBUG=false
+```
+
+### Updated `main.py`
+
+All hardcoded values were removed:
+
+```python
+from config import settings
+
+OLLAMA_URL = settings.OLLAMA_URL
+MODEL = settings.MODEL_NAME
+DB_PATH = settings.CHROMA_PATH
+```
+
+### Updated `my_rag.py`
+
+Your RAG pipeline now uses:
+
+```python
+settings.MAX_RESULTS
+settings.CONFIDENCE_THRESHOLD
 ```
 
 ---
 
-## 🐳 Docker Setup
+## 🐳 Docker Setup (UPDATED)
 
-### **docker-compose.yml**
+### docker-compose.yml
 
-This file defines both services and persistent volumes:
+Now uses `env_file: .env`:
 
 ```yaml
-version: "3.8"
-
 services:
   backend:
     build: ./backend
     container_name: rag_backend
     ports:
       - "8000:8000"
-    environment:
-      - OLLAMA_URL=http://ollama:11434
-      - MODEL_NAME=llama3.2:1b
+    env_file: .env
     depends_on:
       - ollama
     volumes:
@@ -95,41 +145,31 @@ volumes:
   ollama_data:
 ```
 
-### **Backend Dockerfile**
+### Backend Dockerfile (UPDATED)
+
+Includes `config.py` and updated requirements:
 
 ```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir numpy==1.26.4
 
 COPY main.py .
 COPY my_rag.py .
+COPY config.py .
 COPY docs/ docs/
-
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-### **.dockerignore**
+### requirements.txt (UPDATED)
 
 ```
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-.venv
-rag_db/
-chroma_data/
+fastapi==0.109.0
+uvicorn==0.27.0
+chromadb==0.4.24
+sentence-transformers==2.3.1
+requests==2.31.0
+pydantic>=2.7.0
+pydantic-settings==2.6.1
+numpy==1.26.4
 ```
 
 ---
@@ -137,25 +177,24 @@ chroma_data/
 ## 🔌 Endpoints
 
 ### **POST /ask**
-Ask a question and receive a grounded answer.
+Grounded answer with confidence scoring.
 
 ### **POST /ingest**
-Load and embed documents from the `docs/` directory.
+Embeds documents from `docs/`.
 
 ### **GET /stats**
-Returns document count and model info.
+Shows document count + model name.
 
 ### **GET /health**
-Checks:
-- ChromaDB availability  
-- Ollama connectivity  
-- Model availability  
+Verifies:
+
+- ChromaDB connection  
+- Ollama availability  
+- Model load status  
 
 ---
 
 ## 🛡️ Guardrails Included
-
-Your RAG pipeline enforces:
 
 - Distance threshold filtering  
 - Confidence scoring  
@@ -167,21 +206,9 @@ Your RAG pipeline enforces:
 
 ## 🧪 Local Testing (without Docker)
 
-Start Ollama:
-
 ```
 ollama serve
-```
-
-Run FastAPI:
-
-```
 uvicorn main:app --reload
-```
-
-Open Swagger:
-
-```
 http://localhost:8000/docs
 ```
 
@@ -189,25 +216,25 @@ http://localhost:8000/docs
 
 ## 🐳 Running with Docker Compose
 
-### Build and start everything:
+### Build + start:
 
 ```
-docker-compose up --build
+docker compose up --build
 ```
 
 ### Stop:
 
 ```
-docker-compose down
+docker compose down
 ```
 
-### Restart (data persists):
+### Restart (persistent data):
 
 ```
-docker-compose up
+docker compose up
 ```
 
-### Verify health:
+### Verify:
 
 ```
 http://localhost:8000/health
@@ -223,6 +250,12 @@ You should see:
 
 ## 🎯 Purpose
 
-This multi‑service RAG stack is the foundation for your module project.  
-Once this backend + Ollama setup is running, you will later add a **Streamlit frontend** to complete the full stack.
+This backend is now:
+
+- Fully configurable  
+- Docker‑ready  
+- Production‑aligned  
+- Persistent  
+- Guardrailed  
+- Ready for the **Streamlit frontend**   
 
