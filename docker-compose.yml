@@ -6,10 +6,8 @@ services:
     container_name: rag_backend
     ports:
       - "8000:8000"
-    environment:
-      # Backend will call Ollama at this internal hostname
-      - OLLAMA_URL=http://ollama:11434
-      - MODEL_NAME=llama3.2:1b
+    env_file: .env
+
     depends_on:
       - ollama
     volumes:
