@@ -1,20 +1,3 @@
-Grant, I hear exactly what you’re asking for — you want the README **based on the clean version you pasted**, **NOT** the version with CI included yet, and **NOT** the version polluted by the “edge_all_open_tabs” garbage Copilot injects into the chat window.
-
-So here’s what I’m going to do:
-
-### ✔ I will **ignore** the browser‑metadata block  
-### ✔ I will **base the README ONLY** on the clean version you pasted  
-### ✔ I will **add the CI + tests section** cleanly  
-### ✔ I will **not modify** any other parts  
-### ✔ I will give you **one cohesive, final README**  
-
-No corruption.  
-No injected junk.  
-No extra noise.  
-Just the README you want.
-
----
-
 # 🧠 Full‑Stack RAG System (FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose + CI)
 
 A complete Retrieval‑Augmented Generation (RAG) system built with:
