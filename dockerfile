@@ -1,4 +1,3 @@
-# Use official Python slim image
 FROM python:3.11-slim
 
 # Set working directory
@@ -21,7 +20,10 @@ RUN pip install numpy==1.26.4
 # Copy application code and documents
 COPY main.py .
 COPY my_rag.py .
+COPY config.py .
 COPY docs/ docs/
+
+
 
 # Document the port
 EXPOSE 8000
