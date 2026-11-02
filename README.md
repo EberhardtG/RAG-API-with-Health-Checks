@@ -1,62 +1,101 @@
-# 🧠 RAG API with Health Checks  
-A FastAPI backend providing a guardrailed Retrieval‑Augmented Generation (RAG) service powered by ChromaDB and Ollama. This API supports ingestion, querying, system health checks, and statistics — forming the backend foundation for your module project.
+# 🧠 RAG API with Health Checks (Docker Compose Edition)  
+A multi‑service Retrieval‑Augmented Generation (RAG) stack using **FastAPI**, **ChromaDB**, and **Ollama**, orchestrated with **Docker Compose**. This backend supports ingestion, querying, system health checks, and persistent vector storage.
 
 ---
 
 ## 🚀 Overview
 
-This API exposes your guardrailed RAG pipeline through four endpoints:
+This stack runs two connected services:
 
-- **POST /ask** — Ask a question and receive a grounded answer with sources and confidence  
-- **POST /ingest** — Load documents from the `docs/` directory into ChromaDB  
-- **GET /stats** — View document count and model information  
-- **GET /health** — Check ChromaDB and Ollama availability  
+### **1. FastAPI Backend (your RAG API)**
+- Ingest documents  
+- Query ChromaDB  
+- Stream or return grounded answers  
+- Provide health checks and stats  
+- Communicate with Ollama via internal Docker networking  
 
-It includes:
-
-- Pydantic request/response schemas  
-- CORS middleware for frontend connectivity  
-- Error handling for missing documents, invalid questions, and Ollama downtime  
-- Structured responses compatible with your guardrailed RAG pipeline  
+### **2. Ollama Service**
+- Hosts your LLM (e.g., `llama3.2:1b`)  
+- Provides `/api/chat` and `/api/tags` endpoints  
+- Stores models persistently in a named volume  
 
 ---
 
 ## 📁 Project Structure
 
 ```
-my_rag.py          # RAG pipeline (ingest, retrieve, prompt, generate)
-main.py            # FastAPI backend
-docs/              # Folder containing .txt/.md documents
-rag_db/            # Persistent ChromaDB storage
-Dockerfile         # Container build instructions
-.dockerignore      # Files excluded from Docker build context
-requirements.txt   # Python dependencies
+rag-docker-demo/
+├── docker-compose.yml        # Multi-service orchestration
+├── .dockerignore             # Ignore unnecessary files during build
+├── backend/
+│   ├── Dockerfile            # Backend container build instructions
+│   ├── main.py               # FastAPI backend
+│   ├── my_rag.py             # RAG pipeline (ingest, retrieve, prompt, generate)
+│   ├── requirements.txt      # Python dependencies
+│   └── docs/                 # Folder containing .txt/.md documents
+│       └── sample.txt
+└── chroma_data/              # Persistent ChromaDB storage (created automatically)
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-The API uses:
+The backend reads configuration from environment variables set in `docker-compose.yml`:
 
-- **Ollama** for LLM inference  
-- **ChromaDB** for vector storage  
-- **llama3.2:1b** as the default model  
-- **rag_db/** as the persistent database directory  
+```yaml
+environment:
+  - OLLAMA_URL=http://ollama:11434
+  - MODEL_NAME=llama3.2:1b
+```
 
-You can adjust these in the config section of `main.py`:
+Inside `main.py`, these are accessed via:
 
 ```python
-OLLAMA_URL = "http://host.docker.internal:11434"
-MODEL = "llama3.2:1b"
-DB_PATH = "./rag_db"
+OLLAMA_URL = os.environ.get("OLLAMA_URL")
+MODEL = os.environ.get("MODEL_NAME")
+DB_PATH = "/app/chroma_data"   # Matches docker-compose volume
 ```
 
 ---
 
 ## 🐳 Docker Setup
 
-### **Dockerfile**
+### **docker-compose.yml**
+
+This file defines both services and persistent volumes:
+
+```yaml
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: rag_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - MODEL_NAME=llama3.2:1b
+    depends_on:
+      - ollama
+    volumes:
+      - chroma_data:/app/chroma_data
+
+  ollama:
+    image: ollama/ollama
+    container_name: rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  chroma_data:
+  ollama_data:
+```
+
+### **Backend Dockerfile**
 
 ```dockerfile
 FROM python:3.11-slim
@@ -90,108 +129,43 @@ __pycache__/
 .env
 .venv
 rag_db/
+chroma_data/
 ```
 
 ---
 
 ## 🔌 Endpoints
 
-### **POST /ask**  
+### **POST /ask**
 Ask a question and receive a grounded answer.
 
-**Request Body:**
-```json
-{
-  "question": "What does it mean for an API to be stateless?",
-  "n_results": 3,
-  "max_distance": 1.2
-}
-```
-
-**Response:**
-```json
-{
-  "answer": "...",
-  "sources": [...],
-  "confidence": "high",
-  "chunks_retrieved": [...]
-}
-```
-
-Includes:
-
-- Distance threshold filtering  
-- Guardrailed system prompt  
-- Confidence scoring  
-- Structured response  
-
----
-
-### **POST /ingest**  
+### **POST /ingest**
 Load and embed documents from the `docs/` directory.
 
-**Response:**
-```json
-{
-  "message": "Ingestion complete.",
-  "chunks_ingested": 42
-}
-```
+### **GET /stats**
+Returns document count and model info.
 
-Handles:
-
-- Missing directory  
-- Empty folder  
-- Ingestion errors  
-
----
-
-### **GET /stats**  
-Returns basic system statistics.
-
-**Response:**
-```json
-{
-  "documents_indexed": 42,
-  "model": "llama3.2:1b",
-  "database_path": "./rag_db"
-}
-```
-
----
-
-### **GET /health**  
-Checks ChromaDB, Ollama, and model availability.
-
-**Response:**
-```json
-{
-  "chroma_db": "ok",
-  "ollama": "ok",
-  "model_loaded": "ok",
-  "model": "llama3.2:1b",
-  "database_path": "./rag_db"
-}
-```
+### **GET /health**
+Checks:
+- ChromaDB availability  
+- Ollama connectivity  
+- Model availability  
 
 ---
 
 ## 🛡️ Guardrails Included
 
-Your API uses the same guardrails as your RAG pipeline:
+Your RAG pipeline enforces:
 
-- **Distance threshold filtering**  
-- **Confidence scoring**  
-- **Strengthened system prompt**  
-- **Structured response dictionary**  
-- **“I don’t know” fallback**  
-- **No hallucinated citations**  
-
-These ensure safe, grounded, predictable outputs.
+- Distance threshold filtering  
+- Confidence scoring  
+- Strict grounding rules  
+- “I don’t know” fallback  
+- No hallucinated citations  
 
 ---
 
-## 🧪 Testing
+## 🧪 Local Testing (without Docker)
 
 Start Ollama:
 
@@ -199,49 +173,56 @@ Start Ollama:
 ollama serve
 ```
 
-Run the API locally:
+Run FastAPI:
 
 ```
 uvicorn main:app --reload
 ```
 
-Open Swagger UI:
+Open Swagger:
 
 ```
 http://localhost:8000/docs
 ```
-
-Test:
-
-- `/ingest` first  
-- `/ask` next  
-- `/stats` and `/health` anytime  
 
 ---
 
-## 🐳 Running with Docker
+## 🐳 Running with Docker Compose
 
-Build the container:
-
-```
-docker build --no-cache -t rag-api .
-```
-
-Run it:
+### Build and start everything:
 
 ```
-docker run -p 8000:8000 rag-api
+docker-compose up --build
 ```
 
-Swagger UI:
+### Stop:
 
 ```
-http://localhost:8000/docs
+docker-compose down
+```
+
+### Restart (data persists):
+
+```
+docker-compose up
+```
+
+### Verify health:
+
+```
+http://localhost:8000/health
+```
+
+You should see:
+
+```
+"ollama": "connected"
 ```
 
 ---
 
 ## 🎯 Purpose
 
-This API is the backend foundation for your module project. Completing it now ensures Week 2 focuses on Dockerization and deployment rather than debugging.
+This multi‑service RAG stack is the foundation for your module project.  
+Once this backend + Ollama setup is running, you will later add a **Streamlit frontend** to complete the full stack.
 
