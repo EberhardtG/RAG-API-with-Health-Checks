@@ -6,6 +6,8 @@ import requests
 import json
 import os
 from my_rag import ingest, load_documents, rag_query
+from config import settings
+
 
 
 app = FastAPI(title="RAG API", version="1.0")
@@ -19,9 +21,10 @@ app.add_middleware(
 )
 
 # --- Config ---
-OLLAMA_URL = "http://host.docker.internal:11434"
-MODEL = "llama3.2:1b"
-DB_PATH = "./rag_db"
+OLLAMA_URL = settings.OLLAMA_URL
+MODEL = settings.MODEL_NAME
+DB_PATH = settings.CHROMA_PATH
+
 
 # --- ChromaDB setup ---
 client = chromadb.PersistentClient(path=DB_PATH)
