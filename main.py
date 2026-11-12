@@ -1,3 +1,4 @@
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import chromadb
@@ -51,6 +52,11 @@ class AskResponse(BaseModel):
     sources: list[SourceChunk]
     confidence: str
     chunks_retrieved: list[SourceChunk]
+# --- Root ---
+@app.get("/")
+def root():
+    return {"message": "RAG API running"}
+
 
 # --- Ask Endpoint ---
 @app.post("/ask", response_model=AskResponse)
@@ -167,3 +173,5 @@ def health_check():
         "model": MODEL,
         "database_path": DB_PATH
     }
+
+
