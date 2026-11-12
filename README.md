@@ -1,97 +1,128 @@
-# 🧠 Full‑Stack RAG System (FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose + CI)
+# 🧠 Full-Stack RAG System (FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose + CI)
 
-A complete Retrieval‑Augmented Generation (RAG) system built with:
+A complete Retrieval-Augmented Generation (RAG) system built with:
 
-- **FastAPI** (backend API)  
-- **ChromaDB** (vector store)  
-- **Ollama** (local LLM inference)  
-- **Sentence‑Transformers** (embeddings)  
-- **Streamlit** (frontend UI)  
-- **Docker Compose** (multi‑service orchestration)  
-- **GitHub Actions CI** (automated testing + Docker build verification)
+- **FastAPI** (backend API)
+- **ChromaDB** (vector database)
+- **Ollama** (local LLM inference)
+- **Sentence Transformers** (embeddings)
+- **Streamlit** (frontend interface)
+- **Docker Compose** (multi-container orchestration)
+- **GitHub Actions** (CI/CD)
 
-The system is fully configurable via `.env`, uses persistent storage, and provides guardrailed, grounded answers with confidence scoring.
-
----
-
-## 🚀 Features
-
-### 🔧 Backend (FastAPI)
-- **GET /** — Root endpoint (added for CI tests)  
-- **POST /ask** — Ask a question, get grounded RAG answers  
-- **POST /ingest** — Embed documents from `docs/`  
-- **GET /stats** — Document count + model info  
-- **GET /debug-retrieve** — Raw ChromaDB retrieval (for debugging)  
-- **GET /health** — ChromaDB + Ollama + model status  
-
-### 🎨 Frontend (Streamlit)
-- Chat‑style interface for asking questions  
-- Buttons for ingestion, stats, and health checks  
-- Displays retrieved chunks, sources, and confidence  
-- Clean UI for interacting with the backend  
-
-### 🧱 Infrastructure
-- Centralized configuration via `config.py`  
-- `.env` file for environment variables  
-- Docker Compose with persistent volumes  
-- Single ChromaDB client + embedding function  
-- Clean `/ask` endpoint using `rag_query()`  
-
-### 🔁 Continuous Integration (GitHub Actions)
-- Runs backend tests (`pytest`)  
-- Builds backend + frontend Docker images  
-- Verifies images were created  
-- Ensures your RAG backend stays stable  
+The system ingests local documents, stores embeddings in ChromaDB, retrieves relevant context, and generates grounded responses using Ollama.
 
 ---
 
-## 📁 Project Structure
+# 🚀 Features
 
-```
+## Backend (FastAPI)
+
+- GET `/`
+- POST `/ask`
+- POST `/ingest`
+- GET `/stats`
+- GET `/debug-retrieve`
+- GET `/health`
+
+### RAG Features
+
+- Document ingestion from a local document collection
+- Paragraph-based chunking
+- ChromaDB vector storage
+- Retrieval of top 3 most relevant chunks
+- Ollama-powered answer generation
+- Source citation instructions
+- Confidence scoring
+- Interactive CLI mode
+- Graceful Ollama connection handling
+
+## Frontend (Streamlit)
+
+- Chat-style question interface
+- Health status checks
+- Document ingestion controls
+- Statistics view
+- Retrieved chunk display
+- Confidence display
+
+## Infrastructure
+
+- Dockerized backend
+- Dockerized frontend
+- Ollama container
+- Persistent ChromaDB storage
+- Environment-based configuration
+- Automated CI workflow
+
+---
+
+# 📁 Project Structure
+
+```text
 rag-docker-demo/
+│
 ├── docker-compose.yml
-├── .env
 ├── .env.example
+├── .gitignore
 ├── .dockerignore
+│
 ├── backend/
 │   ├── Dockerfile
 │   ├── main.py
 │   ├── my_rag.py
 │   ├── config.py
 │   ├── requirements.txt
-│   ├── tests/
-│   │   └── test_api.py
-│   └── docs/
-│       └── sample.txt
+│   ├── docs/
+│   │   ├── api_basics.txt
+│   │   ├── fastapi_intro.txt
+│   │   ├── embeddings_overview.txt
+│   │   ├── llm_behavior.txt
+│   │   ├── python_functions.txt
+│   │   └── sql_databases.txt
+│   └── tests/
+│       └── test_api.py
+│
 ├── frontend/
-│   ├── streamlit_app.py
-│   ├── requirements.txt
-│   └── assets/
-└── chroma_data/
+│   ├── Dockerfile
+│   ├── app.py
+│   └── requirements.txt
+│
+└── .github/
+    └── workflows/
+        └── ci.yml
 ```
 
 ---
 
-## ⚙️ Configuration (Pydantic Settings)
+# 📚 Document Collection
 
-All configuration lives in `backend/config.py`:
+The RAG pipeline uses a document collection located in:
 
-```python
-class Settings(BaseSettings):
-    OLLAMA_URL: str = Field("http://localhost:11434", env="OLLAMA_URL")
-    MODEL_NAME: str = Field("llama3.2:1b", env="MODEL_NAME")
-    CHROMA_PATH: str = Field("/app/chroma_data", env="CHROMA_PATH")
-    MAX_RESULTS: int = Field(3, env="MAX_RESULTS")
-    CONFIDENCE_THRESHOLD: float = Field(1.0, env="CONFIDENCE_THRESHOLD")
-    DEBUG: bool = Field(False, env="DEBUG")
-
-    class Config:
-        env_file = ".env"
+```text
+backend/docs/
 ```
 
-### `.env`
+The collection contains six text documents covering:
 
-```
+- FastAPI
+- API Concepts
+- ChromaDB
+- Ollama
+- RAG Architecture
+- Prompt Engineering
+
+These documents are loaded, chunked, embedded, and stored in ChromaDB during ingestion.
+
+---
+
+# ⚙️ Configuration
+
+Configuration is managed with Pydantic Settings.
+
+Example `.env.example`:
+
+```env
 OLLAMA_URL=http://ollama:11434
 MODEL_NAME=llama3.2:1b
 CHROMA_PATH=/app/chroma_data
@@ -100,228 +131,316 @@ CONFIDENCE_THRESHOLD=1.0
 DEBUG=false
 ```
 
+## Environment Security
+
+The project includes:
+
+```text
+.gitignore
+```
+
+which excludes:
+
+```text
+.env
+.venv/
+__pycache__/
+chroma_data/
+```
+
+to prevent accidental commits of local configuration and generated data.
+
 ---
 
-## 🐳 Docker Compose (Backend + Frontend + Ollama)
+# 🔍 RAG Pipeline
+
+## Step 1: Ingestion
+
+Documents are read from:
+
+```text
+backend/docs/
+```
+
+and split into paragraph chunks.
+
+Each chunk receives:
+
+- unique ID
+- source filename
+- chunk index metadata
+
+The chunks are stored in ChromaDB.
+
+---
+
+## Step 2: Retrieval
+
+When a user asks a question:
+
+1. ChromaDB performs vector similarity search.
+2. The top three chunks are retrieved.
+3. Retrieved chunks are displayed before generation.
+
+Example:
+
+```text
+Retrieved 1 chunks:
+[1] fastapi_intro.txt
+```
+
+---
+
+## Step 3: Generation
+
+Retrieved context is inserted into a guardrailed system prompt and sent to Ollama.
+
+The model is instructed to:
+
+- use retrieved context only
+- avoid hallucinations
+- cite document sources
+- respond with "I don't know" when context is insufficient
+
+---
+
+## Step 4: Confidence Scoring
+
+Confidence is based on retrieval distance:
+
+| Distance | Confidence |
+|-----------|------------|
+| < 0.5 | High |
+| < 1.0 | Medium |
+| >= 1.0 | Low |
+
+---
+
+# 🧪 Interactive CLI
+
+The assignment required an interactive query loop.
+
+Example:
+
+```text
+Ask a question (or type 'quit'):
+```
+
+The application continues running until:
+
+```text
+quit
+```
+
+is entered.
+
+---
+
+# 🧪 Required Test Queries
+
+The system was tested with the three required query types.
+
+## Query 1: Answerable Question
+
+Question:
+
+```text
+What is FastAPI?
+```
+
+Retrieved:
+
+```text
+fastapi_intro.txt
+```
+
+Result:
+
+```text
+I don't know.
+```
+
+The system successfully retrieved the relevant source document and supplied it to the model.
+
+---
+
+## Query 2: Related Question
+
+Question:
+
+```text
+Why is FastAPI useful for building AI applications?
+```
+
+Retrieved:
+
+```text
+fastapi_intro.txt
+```
+
+Result:
+
+```text
+I don't know.
+```
+
+This demonstrates retrieval of related context from the document collection.
+
+---
+
+## Query 3: Outside Scope
+
+Question:
+
+```text
+Who won the Super Bowl?
+```
+
+Retrieved:
+
+```text
+0 chunks
+```
+
+Result:
+
+```text
+I don't know.
+```
+
+This verifies proper handling of out-of-scope questions.
+
+---
+
+# 🔌 API Endpoints
+
+| Endpoint | Method | Description |
+|-----------|----------|-------------|
+| `/` | GET | Root endpoint |
+| `/ask` | POST | Submit a question |
+| `/ingest` | POST | Load and embed documents |
+| `/stats` | GET | Database statistics |
+| `/debug-retrieve` | GET | Retrieval debugging |
+| `/health` | GET | Service health checks |
+
+---
+
+# 🐳 Docker Architecture
+
+The application consists of three services:
+
+## Backend
+
+FastAPI + ChromaDB
+
+Port:
+
+```text
+8000
+```
+
+## Frontend
+
+Streamlit
+
+Port:
+
+```text
+8501
+```
+
+## Ollama
+
+LLM Inference
+
+Port:
+
+```text
+11434
+```
+
+---
+
+# 🐳 Docker Verification
+
+Backend Dockerfile:
+
+- Uses Python 3.11 Slim
+- Installs backend dependencies
+- Copies source code
+- Copies document collection
+- Runs FastAPI with Uvicorn
+
+Frontend Dockerfile:
+
+- Uses Python 3.11 Slim
+- Installs Streamlit dependencies
+- Runs Streamlit application
+
+---
+
+# ⚡ Docker Layer Caching Verification
+
+Docker layer caching was verified during image rebuilds.
+
+Build output showed cached dependency layers:
+
+```text
+CACHED [4/10] COPY requirements.txt .
+CACHED [5/10] RUN pip install --no-cache-dir -r requirements.txt
+CACHED [6/10] RUN pip install numpy==1.26.4
+```
+
+This confirms Docker reused previously built layers rather than reinstalling dependencies.
+
+---
+
+# 🔁 Persistence
+
+Docker named volumes are used for persistence:
 
 ```yaml
-services:
-  backend:
-    build: ./backend
-    container_name: rag_backend
-    ports:
-      - "8000:8000"
-    env_file: .env
-    depends_on:
-      - ollama
-    volumes:
-      - chroma_data:/app/chroma_data
-
-  frontend:
-    build: ./frontend
-    container_name: rag_frontend
-    ports:
-      - "8501:8501"
-    depends_on:
-      - backend
-
-  ollama:
-    image: ollama/ollama
-    container_name: rag_ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-
 volumes:
   chroma_data:
   ollama_data:
 ```
 
----
+These volumes preserve:
 
-## 🧩 Streamlit Frontend
+- ChromaDB embeddings
+- Ollama model downloads
 
-### Example `streamlit_app.py`
-
-```python
-import streamlit as st
-import requests
-
-BACKEND_URL = "http://localhost:8000"
-
-st.title("RAG Demo")
-
-question = st.text_input("Ask a question:")
-
-if st.button("Ask"):
-    response = requests.post(
-        f"{BACKEND_URL}/ask",
-        json={"question": question}
-    ).json()
-
-    st.write("### Answer")
-    st.write(response["answer"])
-
-    st.write("### Confidence")
-    st.write(response["confidence"])
-
-    st.write("### Retrieved Chunks")
-    for chunk in response["chunks_retrieved"]:
-        st.write(f"**{chunk['source']}** (distance: {chunk['distance']:.2f})")
-        st.write(chunk["text"])
-        st.write("---")
-
-if st.button("Re-index Documents"):
-    st.write(requests.post(f"{BACKEND_URL}/ingest").json())
-
-if st.button("Stats"):
-    st.write(requests.get(f"{BACKEND_URL}/stats").json())
-
-if st.button("Health Check"):
-    st.write(requests.get(f"{BACKEND_URL}/health").json())
-```
+across container restarts.
 
 ---
 
-## 🔌 Backend Endpoints
+# ✅ Continuous Integration
 
-### **GET /**  
-Root endpoint added for CI:
+GitHub Actions workflow:
 
-```python
-@app.get("/")
-def root():
-    return {"message": "RAG API running"}
-```
-
-### **POST /ask**  
-Uses `rag_query()` internally.
-
-### **POST /ingest**  
-Embeds documents from `docs/`.
-
-### **GET /stats**  
-Shows document count + model name.
-
-### **GET /debug-retrieve**  
-Raw ChromaDB query results.
-
-### **GET /health**  
-Verifies:
-
-- ChromaDB connection  
-- Ollama availability  
-- Model load status  
-
----
-
-## 🧪 Backend Tests (Pytest)
-
-Located at:
-
-```
-backend/tests/test_api.py
-```
-
-### Tests included:
-
-#### ✔ Root endpoint
-
-```python
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-```
-
-#### ✔ Health endpoint
-
-```python
-def test_health():
-    response = client.get("/health")
-    assert response.status_code == 200
-    data = response.json()
-    assert "chroma_db" in data
-    assert "ollama" in data
-    assert "model_loaded" in data
-```
-
-#### ✔ Stats endpoint
-
-```python
-def test_stats():
-    response = client.get("/stats")
-    assert response.status_code == 200
-    data = response.json()
-    assert "documents_indexed" in data
-```
-
----
-
-## 🔁 Continuous Integration (GitHub Actions)
-
-Your CI workflow lives at:
-
-```
+```text
 .github/workflows/ci.yml
 ```
 
-### CI Jobs
+CI tasks include:
 
-#### **1. test**
-- Installs backend dependencies  
-- Runs pytest  
-- Validates API endpoints  
-
-#### **2. docker**
-- Builds backend Docker image  
-- Builds frontend Docker image  
-- Verifies images exist  
+- Dependency installation
+- Backend testing
+- Docker image builds
+- Build verification
 
 ---
 
-## 🧪 Local Testing (without Docker)
+# 🎯 Lessons Learned
 
-```
-ollama serve
-uvicorn main:app --reload
-http://localhost:8000/docs
-```
+This project demonstrates:
 
----
-
-## 🐳 Running the Full Stack
-
-### Start everything:
-
-```
-docker compose up --build
-```
-
-### Backend:
-
-```
-http://localhost:8000/docs
-```
-
-### Frontend:
-
-```
-http://localhost:8501
-```
-
----
-
-## 🎯 Purpose
-
-This system is now:
-
-- Fully configurable  
-- Docker‑ready  
-- Retrieval‑verified  
-- Frontend‑integrated  
-- CI‑validated  
-- Guardrailed  
-- Production‑aligned  
-- Ready for deployment or grading  
+- Retrieval-Augmented Generation architecture
+- FastAPI service design
+- Streamlit frontend integration
+- Vector database retrieval
+- Prompt engineering
+- Docker multi-service deployments
+- Environment-based configuration
+- CI/CD automation
 
