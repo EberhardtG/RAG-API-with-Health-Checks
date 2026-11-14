@@ -1,0 +1,31 @@
+SQL Databases
+
+SQL databases are systems designed to store, organize, manage, and retrieve structured data. SQL stands for Structured Query Language, which is the standard language used to communicate with relational database management systems. SQL databases are among the most widely used technologies in software development because they provide reliable data storage, powerful querying capabilities, and strong support for data integrity.
+
+A relational database organizes information into tables. Each table contains rows and columns. Rows represent individual records, while columns define specific attributes of those records. For example, a customer table might contain columns such as customer_id, first_name, last_name, email, and phone_number. Each row represents a single customer stored within the database.
+
+One of the primary benefits of SQL databases is their structured design. The schema defines how data is organized, what fields exist, and what data types are allowed. This structure helps maintain consistency and prevents invalid information from being stored.
+
+Relational databases use keys to uniquely identify and connect records. A primary key uniquely identifies each row within a table. For example, a customer_id column may serve as the primary key for a customer table. Because every record has a unique primary key value, specific records can be located efficiently.
+
+Foreign keys establish relationships between tables. For example, an orders table may contain a customer_id column that references the customer_id primary key in the customer table. This relationship allows the database to connect orders with the customers who placed them. Foreign keys help maintain referential integrity and reduce data duplication.
+
+SQL provides a powerful language for querying data. The most common SQL operation is SELECT, which retrieves information from one or more tables. Developers can specify which columns to retrieve, apply conditions, sort results, and combine information from multiple tables.
+
+The WHERE clause is commonly used with SELECT statements to filter data. For example, a query might request only customers located in a certain city or all products above a specific price range. Filtering allows applications to retrieve only the information that is relevant to a particular request.
+
+Sorting data is performed using the ORDER BY clause. Results can be sorted in ascending or descending order based on one or more columns. Sorting is often used when displaying products, transactions, users, or reports to ensure information appears in a logical sequence.
+
+The INSERT statement is used to add new records to a database table. Applications frequently use INSERT operations when users create accounts, place orders, submit forms, or enter new information into the system. Proper validation is typically performed before data is inserted to ensure quality and consistency.
+
+The UPDATE statement modifies existing records. Applications may use UPDATE operations when users change account information, modify product details, update inventory levels, or edit other stored data. UPDATE statements can affect a single row or many rows depending on the conditions provided.
+
+The DELETE statement removes records from tables. Care must be taken when using DELETE operations because removed data may not be recoverable without backups. Many production systems include safeguards to prevent accidental data loss.
+
+Joins are one of the most powerful features of relational databases. A join combines information from multiple tables using shared relationships. For example, a query may join customer and order tables to display customer information alongside order details. Joins make it possible to build complex reports and retrieve related information efficiently.
+
+Aggregate functions summarize data and produce useful metrics. Common aggregate functions include COUNT, SUM, AVG, MIN, and MAX. Organizations frequently use these functions to calculate statistics such as total sales, average order value, highest revenue month, or customer counts.
+
+Grouping operations are performed using the GROUP BY clause. Grouping allows records to be organized into categories before aggregate calculations are performed. This capability is essential for reporting, analytics, and business intelligence applications.
+
+Indexes improve query performance by creating efficient lookup structures. Without indexes, databases may need to scan entire tables to locate matching records. Indexes significantly reduce search time and improve responsiveness for large datasets. However, indexes

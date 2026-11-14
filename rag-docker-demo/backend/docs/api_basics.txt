@@ -1,0 +1,35 @@
+API Fundamentals
+
+An API, or Application Programming Interface, is a set of rules that allows software applications to communicate with one another. APIs define how requests should be made, what data should be sent, and how responses are returned. They serve as a bridge between different systems and allow developers to build applications that leverage existing services rather than creating everything from scratch.
+
+APIs are used throughout modern software development. Mobile applications communicate with web servers through APIs. Websites retrieve information from databases through APIs. Cloud platforms expose APIs that allow developers to create, update, and manage resources programmatically. Because APIs provide a standardized method of communication, they are a foundational component of modern distributed systems.
+
+Most web APIs today are REST APIs. REST stands for Representational State Transfer. REST APIs use standard HTTP methods such as GET, POST, PUT, PATCH, and DELETE. These methods correspond to common operations performed on resources.
+
+The GET method retrieves information from a server. For example, a GET request to an endpoint such as /users may return a list of users. GET requests should not change server data and are intended primarily for retrieving information.
+
+The POST method creates new resources. A client may send a POST request containing user data to create a new account. The server processes the request and typically returns information about the newly created resource.
+
+PUT requests are generally used to replace an existing resource. PATCH requests update only selected portions of a resource. DELETE requests remove resources from a system. Together, these methods provide a complete set of operations for managing data.
+
+Endpoints are specific URLs that represent resources or actions. For example, an endpoint such as /products may be used to retrieve products, while /products/10 may represent a specific product. Endpoints should be designed consistently and clearly to make APIs easier to understand and maintain.
+
+HTTP status codes communicate the outcome of requests. Status codes in the 200 range generally indicate success. Common examples include 200 OK and 201 Created. Codes in the 400 range typically represent client errors such as invalid input. Examples include 400 Bad Request and 404 Not Found. Codes in the 500 range indicate server-side problems.
+
+Data is commonly exchanged in JSON format. JSON stands for JavaScript Object Notation and provides a lightweight way to structure information. JSON objects consist of key-value pairs and can represent complex nested data structures. Because JSON is human-readable and easy for software systems to parse, it has become the dominant format for web APIs.
+
+Authentication is an important component of API design. Authentication verifies the identity of users or systems making requests. One common approach involves API keys, while more advanced systems use OAuth or JSON Web Tokens (JWTs). Secure authentication mechanisms help protect sensitive data and prevent unauthorized access.
+
+API documentation plays a critical role in usability. Documentation describes available endpoints, request formats, response structures, required parameters, and authentication requirements. Well-documented APIs are easier for developers to use and integrate.
+
+FastAPI is a modern Python framework that simplifies API development. FastAPI uses Python type hints to validate incoming data and automatically generate interactive documentation. This helps developers build reliable APIs quickly while reducing boilerplate code.
+
+An API request typically follows a common workflow. A client sends an HTTP request to a server endpoint. The server validates the request and performs the necessary operations. The server then returns a response containing status information and data. This request-response cycle forms the foundation of API communication.
+
+Error handling is another important aspect of API development. Applications should provide meaningful error messages that help developers diagnose issues. Consistent error responses improve the user experience and make integrations easier to maintain.
+
+Scalability should also be considered when designing APIs. As an application grows, APIs may need to serve thousands or millions of requests. Techniques such as caching, pagination, load balancing, and database optimization help improve performance and reliability.
+
+Versioning allows APIs to evolve without breaking existing clients. Developers often version APIs by including a version identifier such as /api/v1 in the endpoint path. New versions can introduce improvements while maintaining compatibility for older applications.
+
+In summary, APIs provide a structured way for software systems to communicate. REST principles, HTTP methods, status codes, JSON data, authentication, documentation, and scalability are all essential concepts in API development. Understanding these fundamentals enables developers to build reliable and maintainable applications that can interact effectively with other services and systems.

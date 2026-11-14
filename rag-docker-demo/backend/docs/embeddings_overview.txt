@@ -1,0 +1,17 @@
+Embeddings Overview
+
+Embeddings are numerical representations of text, images, or other types of data that allow machine learning systems to understand relationships between pieces of information. Rather than working directly with words, a model converts text into vectors, which are lists of numbers that capture semantic meaning. These vectors make it possible for computers to compare concepts mathematically and identify similarities that may not be obvious through simple keyword matching.
+
+One of the main advantages of embeddings is their ability to capture context and meaning. Traditional keyword search relies on exact word matches. If a user searches for "automobile" but a document contains only the word "car," a keyword search may fail to find a relevant result. Embeddings help solve this problem because words and phrases with similar meanings often produce vectors that are located close together in vector space.
+
+Vector space is a mathematical representation where each embedding is stored as a point defined by hundreds or thousands of numerical dimensions. Although these dimensions are not easily interpretable by humans, they allow machine learning systems to model complex relationships between concepts. Similar documents, sentences, or words appear near one another, while unrelated concepts tend to be farther apart.
+
+Modern embedding models are trained on massive collections of text. During training, the models learn patterns in language and develop the ability to encode semantic information into vectors. As a result, text discussing related topics often produces embeddings that occupy similar regions within vector space.
+
+Embeddings are widely used in search applications. Instead of relying solely on exact text matches, semantic search converts both documents and user queries into embeddings. The system then compares the embeddings to identify documents that are conceptually related to the query. This allows search engines to return more relevant results even when different wording is used.
+
+Retrieval-Augmented Generation, commonly called RAG, depends heavily on embeddings. In a RAG pipeline, documents are first converted into embeddings and stored within a vector database such as ChromaDB. When a user submits a question, the question is also converted into an embedding. The system searches for document embeddings that are close to the query embedding, retrieves the most relevant chunks, and supplies them to a language model as context.
+
+Chunking is an important part of the embedding process. Large documents are typically divided into smaller sections before embeddings are generated. This allows retrieval systems to locate the most relevant passages rather than returning an entire document. Common chunking strategies include splitting by paragraph, section headings, sentence groups, or fixed character counts.
+
+Vector databases are optimized for
