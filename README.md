@@ -1,22 +1,26 @@
-# 🧠 Full-Stack RAG System (FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose + CI)
 
-A complete Retrieval-Augmented Generation (RAG) system built with:
+# 🧠 Full-Stack RAG System
+## FastAPI + ChromaDB + Ollama + Streamlit + Docker Compose + CI
 
-- **FastAPI** (backend API)
-- **ChromaDB** (vector database)
-- **Ollama** (local LLM inference)
-- **Sentence Transformers** (embeddings)
-- **Streamlit** (frontend interface)
-- **Docker Compose** (multi-container orchestration)
-- **GitHub Actions** (CI/CD)
+A complete Retrieval-Augmented Generation (RAG) application built with:
 
-The system ingests local documents, stores embeddings in ChromaDB, retrieves relevant context, and generates grounded responses using Ollama.
+- FastAPI
+- ChromaDB
+- Ollama
+- Sentence Transformers
+- Streamlit
+- Docker Compose
+- GitHub Actions
+
+The system ingests local documents, generates embeddings, stores them in ChromaDB, retrieves relevant context using semantic search, and generates grounded responses using a local LLM running through Ollama.
 
 ---
 
 # 🚀 Features
 
 ## Backend (FastAPI)
+
+Endpoints:
 
 - GET `/`
 - POST `/ask`
@@ -27,33 +31,42 @@ The system ingests local documents, stores embeddings in ChromaDB, retrieves rel
 
 ### RAG Features
 
-- Document ingestion from a local document collection
+- Document ingestion
 - Paragraph-based chunking
+- Sentence Transformer embeddings
 - ChromaDB vector storage
-- Retrieval of top 3 most relevant chunks
-- Ollama-powered answer generation
-- Source citation instructions
+- Retrieval of relevant document chunks
+- Source citations
 - Confidence scoring
-- Interactive CLI mode
-- Graceful Ollama connection handling
+- Retrieval guardrails
+- Health monitoring
+- Statistics endpoint
+
+---
 
 ## Frontend (Streamlit)
 
-- Chat-style question interface
-- Health status checks
-- Document ingestion controls
-- Statistics view
-- Retrieved chunk display
-- Confidence display
+- Chat-based interface using `st.chat_input()`
+- Persistent chat history using Session State
+- Chat rendering with `st.chat_message()`
+- Health monitoring sidebar
+- Indexed document count display
+- Re-index documents button
+- Confidence score display
+- Expandable source citation panel
+- Environment variable configuration
+
+---
 
 ## Infrastructure
 
 - Dockerized backend
 - Dockerized frontend
 - Ollama container
-- Persistent ChromaDB storage
+- ChromaDB persistent volume
+- Ollama persistent volume
 - Environment-based configuration
-- Automated CI workflow
+- CI/CD pipeline
 
 ---
 
@@ -73,6 +86,7 @@ rag-docker-demo/
 │   ├── my_rag.py
 │   ├── config.py
 │   ├── requirements.txt
+│   │
 │   ├── docs/
 │   │   ├── api_basics.txt
 │   │   ├── fastapi_intro.txt
@@ -80,6 +94,7 @@ rag-docker-demo/
 │   │   ├── llm_behavior.txt
 │   │   ├── python_functions.txt
 │   │   └── sql_databases.txt
+│   │
 │   └── tests/
 │       └── test_api.py
 │
@@ -97,43 +112,56 @@ rag-docker-demo/
 
 # 📚 Document Collection
 
-The RAG pipeline uses a document collection located in:
+The RAG pipeline uses a document corpus located in:
 
 ```text
 backend/docs/
 ```
 
-The collection contains six text documents covering:
+The corpus contains six expanded technical documents:
 
-- FastAPI
-- API Concepts
-- ChromaDB
-- Ollama
-- RAG Architecture
-- Prompt Engineering
+- API Fundamentals
+- FastAPI Introduction
+- Embeddings Overview
+- Large Language Model Behavior
+- Python Functions
+- SQL Databases
 
-These documents are loaded, chunked, embedded, and stored in ChromaDB during ingestion.
+The combined corpus exceeds the minimum assignment requirement and provides enough content to support meaningful retrieval and semantic search.
+
+Documents are:
+
+- Loaded from disk
+- Split into chunks
+- Converted into embeddings
+- Stored in ChromaDB
+- Retrieved during semantic search
 
 ---
 
 # ⚙️ Configuration
 
-Configuration is managed with Pydantic Settings.
+Configuration is managed with environment variables.
 
 Example `.env.example`:
 
 ```env
 OLLAMA_URL=http://ollama:11434
 MODEL_NAME=llama3.2:1b
+
 CHROMA_PATH=/app/chroma_data
+
 MAX_RESULTS=3
 CONFIDENCE_THRESHOLD=1.0
-DEBUG=false
+
+BACKEND_URL=http://backend:8000
 ```
+
+---
 
 ## Environment Security
 
-The project includes:
+The repository includes:
 
 ```text
 .gitignore
@@ -148,7 +176,7 @@ __pycache__/
 chroma_data/
 ```
 
-to prevent accidental commits of local configuration and generated data.
+preventing sensitive or generated files from being committed.
 
 ---
 
@@ -156,7 +184,7 @@ to prevent accidental commits of local configuration and generated data.
 
 ## Step 1: Ingestion
 
-Documents are read from:
+Documents are loaded from:
 
 ```text
 backend/docs/
@@ -164,49 +192,51 @@ backend/docs/
 
 and split into paragraph chunks.
 
-Each chunk receives:
+Each chunk receives metadata including:
 
-- unique ID
-- source filename
-- chunk index metadata
+- Source filename
+- Chunk index
+- Unique chunk identifier
 
-The chunks are stored in ChromaDB.
+Chunks are then embedded and stored in ChromaDB.
 
 ---
 
 ## Step 2: Retrieval
 
-When a user asks a question:
+When a question is asked:
 
-1. ChromaDB performs vector similarity search.
-2. The top three chunks are retrieved.
-3. Retrieved chunks are displayed before generation.
+1. The question is converted into an embedding.
+2. ChromaDB performs semantic similarity search.
+3. Relevant document chunks are returned.
+4. Retrieved context is supplied to the language model.
 
 Example:
 
 ```text
 Retrieved 1 chunks:
-[1] fastapi_intro.txt
+
+[1] embeddings_overview.txt
 ```
 
 ---
 
 ## Step 3: Generation
 
-Retrieved context is inserted into a guardrailed system prompt and sent to Ollama.
+Retrieved context is injected into a guardrailed system prompt and sent to Ollama.
 
 The model is instructed to:
 
-- use retrieved context only
-- avoid hallucinations
-- cite document sources
-- respond with "I don't know" when context is insufficient
+- Use provided context
+- Avoid unsupported claims
+- Cite sources
+- Respond with "I don't know" when context is insufficient
 
 ---
 
 ## Step 4: Confidence Scoring
 
-Confidence is based on retrieval distance:
+Confidence is based on retrieval distance.
 
 | Distance | Confidence |
 |-----------|------------|
@@ -216,122 +246,116 @@ Confidence is based on retrieval distance:
 
 ---
 
-# 🧪 Interactive CLI
+# 🛡️ Reliability Guardrails
 
-The assignment required an interactive query loop.
+The application includes retrieval-based guardrails designed to reduce hallucinations.
 
-Example:
+Workflow:
 
-```text
-Ask a question (or type 'quit'):
-```
+1. Retrieve relevant document chunks
+2. Evaluate similarity distance
+3. Assign confidence score
+4. Reject unsupported answers when confidence is low
 
-The application continues running until:
-
-```text
-quit
-```
-
-is entered.
-
----
-
-# 🧪 Required Test Queries
-
-The system was tested with the three required query types.
-
-## Query 1: Answerable Question
-
-Question:
-
-```text
-What is FastAPI?
-```
-
-Retrieved:
-
-```text
-fastapi_intro.txt
-```
-
-Result:
+Fallback behavior:
 
 ```text
 I don't know.
 ```
 
-The system successfully retrieved the relevant source document and supplied it to the model.
-
----
-
-## Query 2: Related Question
-
-Question:
+Example out-of-scope question:
 
 ```text
-Why is FastAPI useful for building AI applications?
+Who won the Super Bowl in 1991?
 ```
 
-Retrieved:
+Expected response:
 
 ```text
-fastapi_intro.txt
-```
+Confidence: low
 
-Result:
-
-```text
 I don't know.
 ```
 
-This demonstrates retrieval of related context from the document collection.
+This ensures responses remain grounded in the document collection.
 
 ---
 
-## Query 3: Outside Scope
+# 💬 Streamlit Features
 
-Question:
+The Streamlit interface includes:
 
-```text
-Who won the Super Bowl?
-```
+- Chat history persistence
+- Real-time question answering
+- Expandable source citations
+- Confidence indicators
+- Backend health monitoring
+- Indexed document statistics
+- Re-index functionality
 
-Retrieved:
-
-```text
-0 chunks
-```
-
-Result:
-
-```text
-I don't know.
-```
-
-This verifies proper handling of out-of-scope questions.
+The frontend communicates with the FastAPI backend through Docker networking.
 
 ---
 
 # 🔌 API Endpoints
 
 | Endpoint | Method | Description |
-|-----------|----------|-------------|
+|----------|----------|-------------|
 | `/` | GET | Root endpoint |
 | `/ask` | POST | Submit a question |
 | `/ingest` | POST | Load and embed documents |
-| `/stats` | GET | Database statistics |
+| `/stats` | GET | Collection statistics |
 | `/debug-retrieve` | GET | Retrieval debugging |
 | `/health` | GET | Service health checks |
 
 ---
 
+# 🧪 Testing
+
+The project includes automated API tests located in:
+
+```text
+backend/tests/test_api.py
+```
+
+Current test coverage includes:
+
+- Root endpoint
+- Health endpoint
+- Statistics endpoint
+- Ask endpoint
+- Question validation
+- Retrieval behavior
+- Guardrail behavior
+
+Run tests with:
+
+```bash
+python -m pytest -v
+```
+
+Example output:
+
+```text
+7 tests collected
+6+ tests passing
+```
+
+---
+
 # 🐳 Docker Architecture
 
-The application consists of three services:
+The project uses three containers.
 
 ## Backend
 
-FastAPI + ChromaDB
+Technology:
+
+```text
+FastAPI
+ChromaDB
+Sentence Transformers
+```
 
 Port:
 
@@ -339,9 +363,15 @@ Port:
 8000
 ```
 
+---
+
 ## Frontend
 
+Technology:
+
+```text
 Streamlit
+```
 
 Port:
 
@@ -349,9 +379,15 @@ Port:
 8501
 ```
 
+---
+
 ## Ollama
 
-LLM Inference
+Technology:
+
+```text
+Llama 3.2 1B
+```
 
 Port:
 
@@ -361,43 +397,35 @@ Port:
 
 ---
 
-# 🐳 Docker Verification
+## Environment Configuration
 
-Backend Dockerfile:
-
-- Uses Python 3.11 Slim
-- Installs backend dependencies
-- Copies source code
-- Copies document collection
-- Runs FastAPI with Uvicorn
-
-Frontend Dockerfile:
-
-- Uses Python 3.11 Slim
-- Installs Streamlit dependencies
-- Runs Streamlit application
-
----
-
-# ⚡ Docker Layer Caching Verification
-
-Docker layer caching was verified during image rebuilds.
-
-Build output showed cached dependency layers:
+Application settings are loaded through:
 
 ```text
-CACHED [4/10] COPY requirements.txt .
-CACHED [5/10] RUN pip install --no-cache-dir -r requirements.txt
-CACHED [6/10] RUN pip install numpy==1.26.4
+.env
 ```
 
-This confirms Docker reused previously built layers rather than reinstalling dependencies.
+A template configuration file is included:
+
+```text
+.env.example
+```
+
+The frontend uses:
+
+```python
+BACKEND_URL = os.getenv(...)
+```
+
+instead of hardcoded URLs.
+
+This improves portability across environments.
 
 ---
 
 # 🔁 Persistence
 
-Docker named volumes are used for persistence:
+Docker named volumes preserve data across restarts.
 
 ```yaml
 volumes:
@@ -405,12 +433,10 @@ volumes:
   ollama_data:
 ```
 
-These volumes preserve:
+Stored data includes:
 
 - ChromaDB embeddings
-- Ollama model downloads
-
-across container restarts.
+- Downloaded Ollama models
 
 ---
 
@@ -422,25 +448,105 @@ GitHub Actions workflow:
 .github/workflows/ci.yml
 ```
 
-CI tasks include:
+Automated tasks:
 
 - Dependency installation
-- Backend testing
+- API testing
 - Docker image builds
 - Build verification
 
 ---
 
-# 🎯 Lessons Learned
+# 🎯 Required Query Demonstration
+
+### Question 1
+
+```text
+What is FastAPI?
+```
+
+Retrieved:
+
+```text
+fastapi_intro.txt
+```
+
+Expected behavior:
+
+- Answer generated
+- Confidence displayed
+- Source citation shown
+
+---
+
+### Question 2
+
+```text
+What are embeddings?
+```
+
+Retrieved:
+
+```text
+embeddings_overview.txt
+```
+
+Expected behavior:
+
+- Semantic retrieval
+- Context-grounded response
+- Source citation shown
+
+---
+
+### Question 3
+
+```text
+Who won the Super Bowl in 1991?
+```
+
+Expected behavior:
+
+```text
+Confidence: low
+
+I don't know.
+```
+
+Demonstrates retrieval guardrails and hallucination prevention.
+
+---
+
+# 🔮 Future Improvements
+
+Potential enhancements include:
+
+- Multi-turn conversation memory
+- File upload support
+- Streaming LLM responses
+- Enhanced confidence calculations
+- Additional document formats (PDF, DOCX)
+- Expanded automated testing
+- Faster inference performance
+- Advanced citation formatting
+
+---
+
+# 🎓 Lessons Learned
 
 This project demonstrates:
 
 - Retrieval-Augmented Generation architecture
-- FastAPI service design
-- Streamlit frontend integration
-- Vector database retrieval
-- Prompt engineering
-- Docker multi-service deployments
+- Semantic search with embeddings
+- FastAPI API development
+- Streamlit application development
+- ChromaDB vector databases
+- Ollama local LLM deployment
+- Docker Compose orchestration
 - Environment-based configuration
-- CI/CD automation
+- Automated testing
+- CI/CD workflows
+- Reliability guardrails
+- Source-grounded AI responses
+
 
